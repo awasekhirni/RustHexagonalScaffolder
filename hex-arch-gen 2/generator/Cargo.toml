@@ -1,0 +1,33 @@
+# Copyright 2025 β ORI Inc. Canada. All Rights Reserved.
+# Author: Awase Khirni Syed
+#
+# hex-arch-gen — Rust port of the Python "Hexagonal Flask Architecture"
+# artefacts generator. Introspects a PostgreSQL schema and emits a fully
+# compiling Axum + SQLx hexagonal REST API with OpenAPI 3 (Swagger UI),
+# an Enterprise Command/Query Bus and the Enterprise Repository pattern.
+#
+#   ┌────────────────────────────┐        ┌──────────────────────────────┐
+#   │  hex-gen (this crate)      │        │  generated-api (emitted)     │
+#   │  introspect → IR → codegen │  ───▶  │  domain/ application/        │
+#   │                            │        │  infrastructure/ api/        │
+#   └────────────────────────────┘        │  enterprise/ (bus+repository)│
+#                                         └──────────────────────────────┘
+
+[package]
+name = "hex-arch-gen"
+version = "0.1.0"
+edition = "2021"
+description = "Hexagonal-architecture REST API generator for PostgreSQL (Axum + SQLx + utoipa)"
+license = "MIT"
+
+[[bin]]
+name = "hex-gen"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+dotenvy = "0.15"
+heck = "0.5"
+sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
