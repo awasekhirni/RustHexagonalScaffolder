@@ -1,0 +1,80 @@
+# hex-arch-gen-v2 — Production-grade Hexagonal Architecture REST API generator.
+#
+# Introspects a PostgreSQL schema (db-first) and emits a compiling Axum +
+# SQLx hexagonal REST API matching the v0.6.0 desired-state platform:
+# presentation/application/domain/infrastructure layers + core/patterns/
+# security/api/telemetry/logging/config cross-cutting concerns, with
+# OpenAPI 3, JWT auth, cursor pagination, ETag/If-Match concurrency,
+# saga orchestration hooks, structured logging, tracing, and a clean
+# error taxonomy.
+#
+#   ┌─────────────────────────────────────┐        ┌──────────────────────────────────────┐
+#   │  hex-gen (this crate)               │        │  <output>/  (emitted Rust project)    │
+#   │  introspect → IR v2 → codegen       │  ───▶  │  domain/ application/ infrastructure/ │
+#   │  + tracing + thiserror + ERROR_INV  │        │  presentation/ shared/ core/ patterns/│
+#   │                                     │        │  security/ api/ telemetry/ logging/   │
+#   └─────────────────────────────────────┘        └──────────────────────────────────────┘
+
+[package]
+name = "hex-arch-gen"
+version = "1.0.0"
+edition = "2021"
+authors = ["Principal Software Architect <awase@example.com>"]
+description = "Production-grade db-first generator for hexagonal-architecture Rust REST APIs (Axum + SQLx + utoipa), matching the v0.6.0 desired-state platform."
+license = "MIT"
+readme = "README.md"
+keywords = ["hexagonal", "ports-and-adapters", "rest", "axum", "postgres"]
+categories = ["command-line-utilities", "development-tools", "web-programming"]
+
+[[bin]]
+name = "hex-gen"
+path = "src/main.rs"
+
+[lib]
+name = "hex_arch_gen"
+path = "src/lib.rs"
+
+[dependencies]
+# CLI parsing
+clap = { version = "4", features = ["derive", "env"] }
+
+# Error handling — typed generator errors
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Logging / tracing — structured logs throughout the generator itself
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+
+# Identifier casing (snake_case ↔ UpperCamel)
+heck = "0.5"
+
+# Async runtime — only needed for the live introspection path
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+
+# Live PostgreSQL introspection (db-first path)
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "macros"] }
+
+# .env loading for the generator itself
+dotenvy = "0.15"
+
+# Deterministic file timestamps in the generation report and error inventory
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde"] }
+
+# Serde + serde_json — for the machine-readable error_inventory.json schema
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# TOML parser — for connection-profiles.toml (multi-tenant DB connectivity,
+# closes gap G-C03). The generated project does not need this; only the
+# generator itself parses TOML at CLI time.
+toml = "0.8"
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

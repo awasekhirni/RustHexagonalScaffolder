@@ -1,0 +1,40 @@
+# Local dev: Postgres + the generated API.
+# v0.5.0 (closes G-L02): the postgres service declares a healthcheck
+# and the api service uses `depends_on.condition: service_healthy` so
+# the API never starts before Postgres is ready to accept connections.
+# The previous bare `depends_on: [postgres]` form raced on first boot.
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dbname
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      # `pg_isready` returns 0 when Postgres is ready to accept
+      # connections. The api service waits for this to pass before
+      # booting, eliminating the first-boot race.
+      test: ["CMD-SHELL", "pg_isready -U user -d dbname"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+  api:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://user:password@postgres:5432/dbname
+      RUST_LOG: info
+    ports:
+      - "8080:8080"
+volumes:
+  pgdata:
+# Note: the `api` service uses the project name `generated-api` for its binary.

@@ -1,0 +1,9 @@
+# v0.5.0: Cargo.lock is intentionally NOT ignored.
+# This is a binary crate — commit Cargo.lock for reproducible
+# deployments (see https://doc.rust-lang.org/cargo/faq.html#why-do-binaries-have-cargolock-in-version-control).
+# If you convert this crate to a library, delete Cargo.lock from
+# version control and add the line `Cargo.lock` to this file.
+/target
+.env
+*.log
+sbom/
